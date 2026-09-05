@@ -409,6 +409,7 @@
       <div class="field">
         <label class="field-label" for="dateInput">来店日</label>
         <input type="date" id="dateInput">
+        <p class="error-text" id="dateError"></p>
       </div>
       <div id="slotArea">
         <p class="slot-empty">日付を選ぶと空き時間が表示されます</p>
@@ -704,6 +705,7 @@ function startChange(reservation) {
   document.getElementById("step2Desc").textContent =
     `${reservation.locationName}のご予約を変更します。ご希望の新しい日時をお選びください。`;
   document.getElementById("dateInput").value = "";
+  document.getElementById("dateError").style.display = "none";
   document.getElementById("slotArea").innerHTML = `<p class="slot-empty">日付を選ぶと空き時間が表示されます</p>`;
 
   goToStep(2);
@@ -746,7 +748,33 @@ document.addEventListener("DOMContentLoaded", () => {
   dateInput.min = calculateMinBookableDateStr_();
 
   dateInput.addEventListener("change", async () => {
-    state.date = dateInput.value;
+    const dateError = document.getElementById("dateError");
+    const selected = dateInput.value;
+    const minStr = calculateMinBookableDateStr_();
+    const weekday = new Date(selected + "T00:00:00").getUTCDay(); // 0=日曜日
+
+    if (selected < minStr) {
+      state.date = null;
+      state.slot = null;
+      dateError.textContent = "申し訳ございません、ご予約は本日から7日後（日曜日を除く）以降で承っております。日付を選び直してください。";
+      dateError.style.display = "block";
+      document.getElementById("slotArea").innerHTML = `<p class="slot-empty">日付を選ぶと空き時間が表示されます</p>`;
+      updateNextButton();
+      return;
+    }
+
+    if (weekday === 0) {
+      state.date = null;
+      state.slot = null;
+      dateError.textContent = "申し訳ございません、日曜日は定休日のためご予約いただけません。別の日付をお選びください。";
+      dateError.style.display = "block";
+      document.getElementById("slotArea").innerHTML = `<p class="slot-empty">日付を選ぶと空き時間が表示されます</p>`;
+      updateNextButton();
+      return;
+    }
+
+    dateError.style.display = "none";
+    state.date = selected;
     state.slot = null;
     updateNextButton();
     await loadSlots();
@@ -1117,6 +1145,9 @@ function bindEvents() {
     document.querySelectorAll("#locationList .option").forEach(o => o.classList.remove("selected"));
     document.getElementById("step2Title").textContent = "日時を選んでください";
     document.getElementById("step2Desc").textContent = "ご希望の日付を選ぶと、空いている時間帯が表示されます。";
+    document.getElementById("dateInput").value = "";
+    document.getElementById("dateError").style.display = "none";
+    document.getElementById("slotArea").innerHTML = `<p class="slot-empty">日付を選ぶと空き時間が表示されます</p>`;
     goToStep(1);
   });
 
