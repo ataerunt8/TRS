@@ -196,6 +196,38 @@
     text-align:center;
   }
 
+  .notice-box{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:14px;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .notice-box p{margin:0 0 8px;}
+  .notice-box p:last-child{margin-bottom:0;}
+  .notice-highlight{
+    background:var(--accent-bg);
+    border:1px solid var(--accent);
+    border-radius:10px;
+    padding:14px 16px;
+    margin-bottom:20px;
+    font-size:13px;
+    color:var(--accent-ink);
+    font-weight:500;
+  }
+  .warning-box{
+    background:var(--accent-bg);
+    border:1px solid var(--accent);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-top:10px;
+    font-size:13px;
+    color:var(--accent-ink);
+    line-height:1.6;
+  }
+
   .summary-card{
     border:1px solid var(--line);
     background:var(--card);
@@ -329,7 +361,7 @@
 <div class="app">
 
   <header class="top" id="topHeader" style="display:none;">
-    <p class="shop">〇〇タイヤサービス</p>
+    <p class="shop">AUTO DEALER ATAERU</p>
     <h1 id="headerTitle">タイヤ交換予約</h1>
     <div class="progress" id="progressBar"></div>
     <p class="label" id="progressLabel"></p>
@@ -352,8 +384,20 @@
 
     <!-- Step 1: 拠点選択 -->
     <section class="step" data-step="1">
+      <div class="notice-box">
+        <p>ご希望の日程・時間帯を選択し、ご予約ください。</p>
+        <p>操作が難しい場合や、予約の変更・キャンセル・修正等はお電話でも承ります。（店舗：011-299-3111）</p>
+        <p>ご予約いただいた日程にてご来店をお待ちしておりますので、予約後は予約当日・時間にそのままご来店くださいませ。</p>
+        <p>タイヤ交換以外の付帯作業（オイル交換など）をご希望の場合は、その旨ご選択ください。</p>
+        <p>作業の緊急的な遅延やその他トラブル、予約内容確認等の理由により、ご入力いただいた電話番号へ店舗よりお電話を差し上げる場合がございます。</p>
+      </div>
+      <div class="notice-highlight">
+        まれに、ご予約いただいた拠点と異なる店舗にご来店されるお客様がいらっしゃいます。ご来店の際は、予約内容の拠点をもう一度ご確認いただけますと幸いです。
+      </div>
+
       <h2 class="step-title">拠点を選んでください</h2>
       <p class="step-desc">ご来店予定の店舗を選択してください。</p>
+
       <div class="option-list" id="locationList"></div>
     </section>
 
@@ -414,6 +458,9 @@
           </div>
         </div>
         <p class="error-text" id="tireStorageError">いずれかを選択してください</p>
+        <p class="warning-box" id="tireStorageFeeNotice" style="display:none;">
+          タイヤ保管中の方で本店での作業をご希望の場合、別途タイヤ運搬料として2,200円を承ります。あらかじめご了承ください。
+        </p>
       </div>
 
       <div class="field" id="nameField">
@@ -431,9 +478,9 @@
         <input type="text" id="carModelInput" placeholder="例）プリウス">
       </div>
       <div class="field" id="carNumberField">
-        <label class="field-label" for="carNumberInput">車のナンバー（4桁）</label>
+        <label class="field-label" for="carNumberInput">車のナンバー</label>
         <input type="text" id="carNumberInput" inputmode="numeric" maxlength="4" placeholder="例）1234">
-        <p class="error-text">ナンバーの4桁を入力してください</p>
+        <p class="error-text">ナンバーの数字を入力してください</p>
       </div>
       <div class="field">
         <label class="field-label" for="companyInput">法人名（法人でご利用の場合）</label>
@@ -800,7 +847,7 @@ function validateStep3() {
   }
 
   const carNumberDigits = carNumberInput.value.replace(/[^0-9]/g, "");
-  if (carNumberDigits.length !== 4) {
+  if (carNumberDigits.length < 1) {
     carNumberField.classList.add("invalid");
     valid = false;
   } else {
@@ -1031,8 +1078,15 @@ function bindTireStorageOptions() {
       document.querySelectorAll("#tireStorageList .option").forEach(o => o.classList.remove("selected"));
       el.classList.add("selected");
       state.tireStorage = el.dataset.value;
+      updateTireStorageFeeNotice();
     });
   });
+}
+
+function updateTireStorageFeeNotice() {
+  const notice = document.getElementById("tireStorageFeeNotice");
+  const show = state.location && state.location.id === "honten" && state.tireStorage === "stored";
+  notice.style.display = show ? "block" : "none";
 }
 
 function bindEvents() {
@@ -1100,3 +1154,4 @@ init();
 
 </body>
 </html>
+
