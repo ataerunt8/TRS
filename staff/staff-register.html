@@ -1,1 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>スタッフ通知登録</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root{
+    --ink:#2A2A28;
+    --ink-soft:#5C5A54;
+    --paper:#F6F4EF;
+    --card:#FFFFFF;
+    --line:#E3E0D6;
+    --accent:#D9660B;
+    --success:#2F6B4F;
+    --success-bg:#E3EFE8;
+    --danger:#B3392E;
+    --danger-bg:#F6E4E1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.7;
+  }
+  .wrap{
+    max-width:420px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:24px;
+    text-align:center;
+  }
+  .icon{
+    width:56px; height:56px;
+    border-radius:50%;
+    margin:0 auto 20px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--success-bg);
+  }
+  .icon.pending{background:var(--card); border:1px solid var(--line);}
+  .icon.error{background:var(--danger-bg);}
+  h1{font-size:18px; margin:0 0 8px;}
+  p{font-size:14px; color:var(--ink-soft); margin:0;}
+  .name{font-weight:500; color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="icon pending" id="icon"></div>
+  <h1 id="title">登録しています…</h1>
+  <p id="message">少々お待ちください。</p>
+</div>
+
+<script>
+const CONFIG = {
+  LIFF_ID: "YOUR-STAFF-LIFF-ID",  // スタッフ登録専用に発行したLIFF ID
+  GAS_ENDPOINT: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
+};
+
+async function main() {
+  try {
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      liff.login();
+      return;
+    }
+    const profile = await liff.getProfile();
+
+    const res = await fetch(CONFIG.GAS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "registerStaff",
+        userId: profile.userId,
+        displayName: profile.displayName
+      })
+    });
+    const result = await res.json();
+
+    if (result.ok) {
+      showState("success", "登録が完了しました", `${profile.displayName} さんへの通知をオンにしました。`);
+    } else {
+      showState("error", "登録できませんでした", result.message || "時間をおいてもう一度お試しください。");
+    }
+  } catch (e) {
+    showState("error", "エラーが発生しました", "通信環境の良い場所でもう一度お試しください。");
+  }
+}
+
+function showState(type, title, message) {
+  const icon = document.getElementById("icon");
+  icon.className = "icon " + type;
+  document.getElementById("title").textContent = title;
+  document.getElementById("message").textContent = message;
+}
+
+main();
+</script>
+</body>
+</html>
 
