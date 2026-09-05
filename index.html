@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>タイヤ交換予約</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+  :root{
+    --ink:#2A2A28;
+    --ink-soft:#5C5A54;
+    --paper:#F6F4EF;
+    --card:#FFFFFF;
+    --line:#E3E0D6;
+    --accent:#D9660B;
+    --accent-ink:#7A3C08;
+    --accent-bg:#FBE7D6;
+    --success:#2F6B4F;
+    --success-bg:#E3EFE8;
+    --danger:#B3392E;
+    --danger-bg:#F6E4E1;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:var(--paper);
+  }
+  header.top{
+    padding:20px 20px 16px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper);
+    position:sticky;
+    top:0;
+    z-index:5;
+  }
+  header.top .shop{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 4px;
+  }
+  header.top h1{
+    font-size:20px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:0.02em;
+  }
+  .progress{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:14px;
+  }
+  .progress .seg{
+    flex:1;
+    height:3px;
+    background:var(--line);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .progress .seg.done{background:var(--accent);}
+  .progress .label{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:8px;
+  }
+
+  main{flex:1; padding:20px 20px 100px;}
+  .step{display:none;}
+  .step.active{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  h2.step-title{
+    font-size:17px;
+    font-weight:700;
+    margin:0 0 4px;
+  }
+  p.step-desc{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 20px;
+  }
+
+  .option-list{display:flex; flex-direction:column; gap:10px;}
+  .option{
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:10px;
+    padding:16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .option:active{transform:scale(0.99);}
+  .option.selected{
+    border-color:var(--accent);
+    background:var(--accent-bg);
+  }
+  .option .name{font-size:15px; font-weight:500;}
+  .option .sub{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .option .check{
+    width:20px; height:20px;
+    border-radius:50%;
+    border:1.5px solid var(--line);
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .option.selected .check{border-color:var(--accent); background:var(--accent);}
+  .option.selected .check::after{
+    content:"";
+    width:6px; height:10px;
+    border-right:2px solid #fff;
+    border-bottom:2px solid #fff;
+    transform:rotate(45deg) translate(-1px,-1px);
+  }
+
+  label.field-label{
+    display:block;
+    font-size:13px;
+    font-weight:500;
+    color:var(--ink-soft);
+    margin:0 0 8px;
+  }
+  input[type="date"], input[type="text"], input[type="tel"], textarea{
+    width:100%;
+    padding:14px;
+    font-size:16px;
+    font-family:inherit;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--card);
+    color:var(--ink);
+  }
+  textarea{
+    resize:vertical;
+    min-height:80px;
+    line-height:1.6;
+  }
+  input:focus, textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .field{margin-bottom:18px;}
+  .error-text{
+    font-size:12px;
+    color:var(--danger);
+    margin-top:6px;
+    display:none;
+  }
+  .field.invalid input{border-color:var(--danger);}
+  .field.invalid .error-text{display:block;}
+
+  .slot-status{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:14px;
+  }
+  .slot-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+  }
+  .slot{
+    padding:12px 4px;
+    text-align:center;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--card);
+    font-size:14px;
+    cursor:pointer;
+  }
+  .slot.selected{border-color:var(--accent); background:var(--accent-bg); color:var(--accent-ink); font-weight:500;}
+  .slot.full{
+    color:#B4B1A6;
+    background:#EFEDE6;
+    border-color:#EFEDE6;
+    cursor:not-allowed;
+  }
+  .slot-empty{
+    font-size:13px;
+    color:var(--ink-soft);
+    padding:24px 0;
+    text-align:center;
+  }
+
+  .summary-card{
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:12px;
+    padding:18px;
+  }
+  .summary-row{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    gap:16px;
+  }
+  .summary-row:last-child{border-bottom:none;}
+  .summary-row .k{color:var(--ink-soft); flex-shrink:0;}
+  .summary-row .v{font-weight:500; text-align:right;}
+
+  .reservation-card{
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .reservation-card .head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:10px;
+  }
+  .reservation-card .loc{font-size:15px; font-weight:700;}
+  .reservation-card .when{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+  .status-badge{
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:20px;
+    background:var(--accent-bg);
+    color:var(--accent-ink);
+    font-weight:500;
+    white-space:nowrap;
+  }
+  .reservation-card .actions{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  .reservation-card .actions button{
+    flex:1;
+    padding:10px;
+    font-size:13px;
+  }
+  .btn-change{background:var(--paper); color:var(--ink); border:1px solid var(--line);}
+  .btn-cancel{background:var(--paper); color:var(--danger); border:1px solid var(--danger-bg);}
+
+  footer.bottom{
+    position:sticky;
+    bottom:0;
+    background:var(--paper);
+    border-top:1px solid var(--line);
+    padding:14px 20px calc(14px + env(safe-area-inset-bottom));
+    max-width:480px;
+    margin:0 auto;
+    width:100%;
+  }
+  .btn-row{display:flex; gap:10px;}
+  button{
+    font-family:inherit;
+    font-size:15px;
+    font-weight:500;
+    border-radius:10px;
+    padding:14px;
+    border:none;
+    cursor:pointer;
+    flex:1;
+  }
+  button.primary{background:var(--accent); color:#fff;}
+  button.primary:disabled{background:#E3C6A6; cursor:not-allowed;}
+  button.secondary{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
+  button.text-link{
+    background:none;
+    border:none;
+    color:var(--accent-ink);
+    font-size:14px;
+    text-decoration:underline;
+    padding:8px 0;
+    flex:none;
+  }
+
+  .state-screen{
+    padding:60px 24px;
+    text-align:center;
+  }
+  .state-screen .icon{
+    width:56px; height:56px;
+    border-radius:50%;
+    margin:0 auto 20px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .state-screen.success .icon{background:var(--success-bg);}
+  .state-screen.success .icon::after{
+    content:"";
+    width:14px; height:24px;
+    border-right:3px solid var(--success);
+    border-bottom:3px solid var(--success);
+    transform:rotate(45deg) translate(-2px,-4px);
+  }
+  .state-screen.error .icon{background:var(--danger-bg); color:var(--danger); font-size:28px; font-weight:700;}
+  .state-screen h2{font-size:18px; margin:0 0 8px;}
+  .state-screen p{font-size:14px; color:var(--ink-soft); margin:0 0 28px;}
+
+  .loading-inline{
+    font-size:13px;
+    color:var(--ink-soft);
+    padding:16px 0;
+    text-align:center;
+  }
+  .empty-note{
+    font-size:13px;
+    color:var(--ink-soft);
+    padding:12px 0 20px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .step.active{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="top" id="topHeader" style="display:none;">
+    <p class="shop">〇〇タイヤサービス</p>
+    <h1 id="headerTitle">タイヤ交換予約</h1>
+    <div class="progress" id="progressBar"></div>
+    <p class="label" id="progressLabel"></p>
+  </header>
+
+  <main>
+
+    <!-- 起動時ローディング -->
+    <section class="step active" data-step="loading">
+      <p class="loading-inline">読み込んでいます…</p>
+    </section>
+
+    <!-- マイ予約一覧 -->
+    <section class="step" data-step="mypage">
+      <h2 class="step-title">ご予約状況</h2>
+      <p class="step-desc">現在受付中のご予約です。</p>
+      <div id="myReservationList"></div>
+      <button class="text-link" id="btnNewFromMypage" style="width:100%; text-align:center;">＋ 新しく予約する</button>
+    </section>
+
+    <!-- Step 1: 拠点選択 -->
+    <section class="step" data-step="1">
+      <h2 class="step-title">拠点を選んでください</h2>
+      <p class="step-desc">ご来店予定の店舗を選択してください。</p>
+      <div class="option-list" id="locationList"></div>
+    </section>
+
+    <!-- Step 2: 日付・時間枠選択（新規／変更 共通） -->
+    <section class="step" data-step="2">
+      <h2 class="step-title" id="step2Title">日時を選んでください</h2>
+      <p class="step-desc" id="step2Desc">ご希望の日付を選ぶと、空いている時間帯が表示されます。</p>
+      <div class="field">
+        <label class="field-label" for="dateInput">来店日</label>
+        <input type="date" id="dateInput">
+      </div>
+      <div id="slotArea">
+        <p class="slot-empty">日付を選ぶと空き時間が表示されます</p>
+      </div>
+    </section>
+
+    <!-- Step 3: お客様情報 -->
+    <section class="step" data-step="3">
+      <h2 class="step-title">お客様情報を入力してください</h2>
+      <p class="step-desc">ご連絡先はリマインドのLINE通知にのみ使用します。</p>
+
+      <div class="field">
+        <label class="field-label">オイル交換も同時にご希望ですか</label>
+        <div class="option-list" id="oilChangeList">
+          <div class="option" data-value="yes">
+            <div>
+              <div class="name">同時に依頼する</div>
+              <div class="sub">タイヤ交換とあわせて作業します</div>
+            </div>
+            <div class="check"></div>
+          </div>
+          <div class="option" data-value="no">
+            <div>
+              <div class="name">タイヤ交換のみ</div>
+            </div>
+            <div class="check"></div>
+          </div>
+        </div>
+        <p class="error-text" id="oilChangeError">いずれかを選択してください</p>
+      </div>
+
+      <div class="field">
+        <label class="field-label">タイヤの保管状況</label>
+        <div class="option-list" id="tireStorageList">
+          <div class="option" data-value="stored">
+            <div>
+              <div class="name">今保管中の方</div>
+              <div class="sub">当店でお預かりしているタイヤを使用</div>
+            </div>
+            <div class="check"></div>
+          </div>
+          <div class="option" data-value="bring">
+            <div>
+              <div class="name">お持込みの方</div>
+              <div class="sub">タイヤをお客様がお持ちいただく</div>
+            </div>
+            <div class="check"></div>
+          </div>
+        </div>
+        <p class="error-text" id="tireStorageError">いずれかを選択してください</p>
+      </div>
+
+      <div class="field" id="nameField">
+        <label class="field-label" for="nameInput">お名前</label>
+        <input type="text" id="nameInput" placeholder="例）山田 太郎">
+        <p class="error-text">お名前を入力してください</p>
+      </div>
+      <div class="field" id="telField">
+        <label class="field-label" for="telInput">電話番号</label>
+        <input type="tel" id="telInput" placeholder="例）090-1234-5678">
+        <p class="error-text">電話番号を正しく入力してください</p>
+      </div>
+      <div class="field">
+        <label class="field-label" for="carModelInput">車種</label>
+        <input type="text" id="carModelInput" placeholder="例）プリウス">
+      </div>
+      <div class="field" id="carNumberField">
+        <label class="field-label" for="carNumberInput">車のナンバー（4桁）</label>
+        <input type="text" id="carNumberInput" inputmode="numeric" maxlength="4" placeholder="例）1234">
+        <p class="error-text">ナンバーの4桁を入力してください</p>
+      </div>
+      <div class="field">
+        <label class="field-label" for="companyInput">法人名（法人でご利用の場合）</label>
+        <input type="text" id="companyInput" placeholder="例）〇〇株式会社">
+      </div>
+      <div class="field">
+        <label class="field-label" for="noteInput">その他ご相談があればご記入ください</label>
+        <textarea id="noteInput" placeholder="例）作業中に代車をお借りしたい　など"></textarea>
+      </div>
+    </section>
+
+    <!-- Step 4: 確認（新規予約） -->
+    <section class="step" data-step="4">
+      <h2 class="step-title">予約内容の確認</h2>
+      <p class="step-desc">内容をご確認のうえ、予約を確定してください。</p>
+      <div class="summary-card" id="summaryCard"></div>
+    </section>
+
+    <!-- 変更確認 -->
+    <section class="step" data-step="changeConfirm">
+      <h2 class="step-title">変更内容の確認</h2>
+      <p class="step-desc">新しい日時でよろしければ確定してください。</p>
+      <div class="summary-card" id="changeSummaryCard"></div>
+    </section>
+
+    <!-- 完了・エラー画面 -->
+    <section class="step" data-step="done">
+      <div class="state-screen success">
+        <div class="icon"></div>
+        <h2>予約を受け付けました</h2>
+        <p>予約内容をLINEにお送りしました。<br>前日にリマインドをお送りします。</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="changeDone">
+      <div class="state-screen success">
+        <div class="icon"></div>
+        <h2>予約を変更しました</h2>
+        <p>変更後の日時をLINEにお送りしました。</p>
+      </div>
+    </section>
+
+    <section class="step" data-step="fail">
+      <div class="state-screen error">
+        <div class="icon">!</div>
+        <h2 id="failTitle">送信できませんでした</h2>
+        <p id="failMessage">時間をおいてもう一度お試しください。</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bottom" id="footerNav" style="display:none;">
+    <div class="btn-row">
+      <button class="secondary" id="btnBack">戻る</button>
+      <button class="primary" id="btnNext" disabled>次へ</button>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* ==============================
+   設定：ここを実環境に合わせて変更
+   ============================== */
+const CONFIG = {
+  LIFF_ID: "YOUR-LIFF-ID",                 // LINE Developersで発行したLIFF ID
+  GAS_ENDPOINT: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec", // GAS WebアプリのURL
+  LOCATIONS: [
+    { id: "honten", name: "本店",     sub: "札幌市東区東苗穂" },
+    { id: "bitoe",  name: "ビトエ店", sub: "石狩郡当別町ビトエ" }
+  ]
+};
+
+/* ==============================
+   状態管理
+   ============================== */
+const state = {
+  step: "loading",
+  mode: "new", // "new" | "change"
+  location: null,
+  date: null,
+  slot: null,
+  name: "",
+  tel: "",
+  note: "",
+  oilChange: null,
+  tireStorage: null,
+  carModel: "",
+  carNumber: "",
+  company: "",
+  lineUserId: null,
+  lineDisplayName: null,
+  myReservations: [],
+  editingReservation: null // 変更対象の予約オブジェクト
+};
+
+const STEP_LABELS = {
+  1: "1/4 拠点を選択",
+  2: "2/4 日時を選択",
+  3: "3/4 お客様情報",
+  4: "4/4 内容確認"
+};
+
+/* ==============================
+   初期化
+   ============================== */
+async function init() {
+  renderLocations();
+  bindEvents();
+
+  try {
+    await liff.init({ liffId: CONFIG.LIFF_ID });
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      state.lineUserId = profile.userId;
+      state.lineDisplayName = profile.displayName;
+    }
+  } catch (e) {
+    console.warn("LIFF init skipped:", e);
+  }
+
+  if (state.lineUserId) {
+    try {
+      state.myReservations = await fetchMyReservations(state.lineUserId);
+    } catch (e) {
+      console.warn("fetchMyReservations failed:", e);
+      state.myReservations = [];
+    }
+  }
+
+  if (state.myReservations.length > 0) {
+    renderMyReservations();
+    goToStep("mypage");
+  } else {
+    goToStep(1);
+  }
+}
+
+/* ==============================
+   マイ予約 API・描画
+   ============================== */
+// レスポンス例: [{ id, locationId, locationName, date, time, status }]
+async function fetchMyReservations(lineUserId) {
+  const url = `${CONFIG.GAS_ENDPOINT}?action=myReservations&userId=${encodeURIComponent(lineUserId)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("network error");
+  return res.json();
+}
+
+function renderMyReservations() {
+  const list = document.getElementById("myReservationList");
+  if (!state.myReservations || state.myReservations.length === 0) {
+    list.innerHTML = `<p class="empty-note">現在受付中のご予約はありません。</p>`;
+    return;
+  }
+  list.innerHTML = "";
+  state.myReservations.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "reservation-card";
+    card.innerHTML = `
+      <div class="head">
+        <div>
+          <div class="loc">${r.locationName}</div>
+          <div class="when">${formatDate(r.date)}　${r.time} 〜</div>
+        </div>
+        <div class="status-badge">${r.status || "確定"}</div>
+      </div>
+      <div class="actions">
+        <button class="btn-change" data-id="${r.id}">日時を変更</button>
+        <button class="btn-cancel" data-id="${r.id}">キャンセル</button>
+      </div>
+    `;
+    card.querySelector(".btn-change").addEventListener("click", () => startChange(r));
+    card.querySelector(".btn-cancel").addEventListener("click", () => confirmCancel(r));
+    list.appendChild(card);
+  });
+}
+
+function confirmCancel(reservation) {
+  const ok = window.confirm(
+    `${formatDate(reservation.date)} ${reservation.time}〜 のご予約をキャンセルします。よろしいですか？`
+  );
+  if (!ok) return;
+  cancelReservation(reservation);
+}
+
+async function cancelReservation(reservation) {
+  try {
+    const res = await fetch(CONFIG.GAS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "cancel",
+        reservationId: reservation.id,
+        lineUserId: state.lineUserId
+      })
+    });
+    const result = await res.json();
+    if (result.ok) {
+      state.myReservations = state.myReservations.filter(r => r.id !== reservation.id);
+      renderMyReservations();
+    } else {
+      alert(result.message || "キャンセルできませんでした。お手数ですが店舗へお電話ください。");
+    }
+  } catch (e) {
+    alert("通信エラーが発生しました。電波の良い場所でもう一度お試しください。");
+  }
+}
+
+function startChange(reservation) {
+  state.mode = "change";
+  state.editingReservation = reservation;
+  state.location = CONFIG.LOCATIONS.find(l => l.id === reservation.locationId) ||
+                    { id: reservation.locationId, name: reservation.locationName };
+  state.date = null;
+  state.slot = null;
+
+  document.getElementById("step2Title").textContent = "新しい日時を選んでください";
+  document.getElementById("step2Desc").textContent =
+    `${reservation.locationName}のご予約を変更します。ご希望の新しい日時をお選びください。`;
+  document.getElementById("dateInput").value = "";
+  document.getElementById("slotArea").innerHTML = `<p class="slot-empty">日付を選ぶと空き時間が表示されます</p>`;
+
+  goToStep(2);
+}
+
+/* ==============================
+   拠点リスト描画（新規予約）
+   ============================== */
+function renderLocations() {
+  const list = document.getElementById("locationList");
+  list.innerHTML = "";
+  CONFIG.LOCATIONS.forEach(loc => {
+    const el = document.createElement("div");
+    el.className = "option";
+    el.dataset.id = loc.id;
+    el.innerHTML = `
+      <div>
+        <div class="name">${loc.name}</div>
+        <div class="sub">${loc.sub}</div>
+      </div>
+      <div class="check"></div>
+    `;
+    el.addEventListener("click", () => selectLocation(loc, el));
+    list.appendChild(el);
+  });
+}
+
+function selectLocation(loc, el) {
+  document.querySelectorAll("#locationList .option").forEach(o => o.classList.remove("selected"));
+  el.classList.add("selected");
+  state.location = loc;
+  updateNextButton();
+}
+
+/* ==============================
+   日付・空き枠
+   ============================== */
+document.addEventListener("DOMContentLoaded", () => {
+  const dateInput = document.getElementById("dateInput");
+  const today = new Date();
+  const minDate = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  dateInput.min = minDate.toISOString().split("T")[0];
+
+  dateInput.addEventListener("change", async () => {
+    state.date = dateInput.value;
+    state.slot = null;
+    updateNextButton();
+    await loadSlots();
+  });
+});
+
+async function loadSlots() {
+  const area = document.getElementById("slotArea");
+  area.innerHTML = `<p class="loading-inline">空き状況を確認しています…</p>`;
+
+  try {
+    const slots = await fetchAvailableSlots(state.location.id, state.date);
+    renderSlots(slots);
+  } catch (e) {
+    area.innerHTML = `<p class="slot-empty">空き状況を取得できませんでした。時間をおいて再度お試しください。</p>`;
+  }
+}
+
+// レスポンス例: [{ time: "10:00", available: true }, ...]
+async function fetchAvailableSlots(locationId, date) {
+  const url = `${CONFIG.GAS_ENDPOINT}?action=slots&location=${encodeURIComponent(locationId)}&date=${encodeURIComponent(date)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("network error");
+  return res.json();
+}
+
+function renderSlots(slots) {
+  const area = document.getElementById("slotArea");
+  if (!slots || slots.length === 0) {
+    area.innerHTML = `<p class="slot-empty">この日は予約可能な時間がありません</p>`;
+    return;
+  }
+  const availableCount = slots.filter(s => s.available).length;
+  area.innerHTML = `
+    <p class="slot-status">空き ${availableCount} 枠 / 全 ${slots.length} 枠</p>
+    <div class="slot-grid" id="slotGrid"></div>
+  `;
+  const grid = document.getElementById("slotGrid");
+  slots.forEach(s => {
+    const el = document.createElement("div");
+    el.className = "slot" + (s.available ? "" : " full");
+    el.textContent = s.time;
+    if (s.available) {
+      el.addEventListener("click", () => {
+        document.querySelectorAll(".slot").forEach(x => x.classList.remove("selected"));
+        el.classList.add("selected");
+        state.slot = s.time;
+        updateNextButton();
+      });
+    }
+    grid.appendChild(el);
+  });
+}
+
+/* ==============================
+   お客様情報バリデーション
+   ============================== */
+function validateStep3() {
+  const nameInput = document.getElementById("nameInput");
+  const telInput = document.getElementById("telInput");
+  const carNumberInput = document.getElementById("carNumberInput");
+  const nameField = document.getElementById("nameField");
+  const telField = document.getElementById("telField");
+  const carNumberField = document.getElementById("carNumberField");
+  const oilChangeError = document.getElementById("oilChangeError");
+  const tireStorageError = document.getElementById("tireStorageError");
+
+  let valid = true;
+
+  if (!state.oilChange) {
+    oilChangeError.style.display = "block";
+    valid = false;
+  } else {
+    oilChangeError.style.display = "none";
+  }
+
+  if (!state.tireStorage) {
+    tireStorageError.style.display = "block";
+    valid = false;
+  } else {
+    tireStorageError.style.display = "none";
+  }
+
+  if (nameInput.value.trim() === "") {
+    nameField.classList.add("invalid");
+    valid = false;
+  } else {
+    nameField.classList.remove("invalid");
+  }
+
+  const telDigits = telInput.value.replace(/[^0-9]/g, "");
+  if (telDigits.length < 10 || telDigits.length > 11) {
+    telField.classList.add("invalid");
+    valid = false;
+  } else {
+    telField.classList.remove("invalid");
+  }
+
+  const carNumberDigits = carNumberInput.value.replace(/[^0-9]/g, "");
+  if (carNumberDigits.length !== 4) {
+    carNumberField.classList.add("invalid");
+    valid = false;
+  } else {
+    carNumberField.classList.remove("invalid");
+  }
+
+  return valid;
+}
+
+/* ==============================
+   確認画面（新規予約）
+   ============================== */
+function renderSummary() {
+  const card = document.getElementById("summaryCard");
+  card.innerHTML = `
+    <div class="summary-row"><span class="k">拠点</span><span class="v">${state.location.name}</span></div>
+    <div class="summary-row"><span class="k">日付</span><span class="v">${formatDate(state.date)}</span></div>
+    <div class="summary-row"><span class="k">時間</span><span class="v">${state.slot} 〜（60分）</span></div>
+    <div class="summary-row"><span class="k">オイル交換</span><span class="v">${state.oilChange === "yes" ? "同時に依頼する" : "タイヤ交換のみ"}</span></div>
+    <div class="summary-row"><span class="k">タイヤ</span><span class="v">${state.tireStorage === "stored" ? "今保管中" : "お持込み"}</span></div>
+    <div class="summary-row"><span class="k">お名前</span><span class="v">${state.name}</span></div>
+    <div class="summary-row"><span class="k">電話番号</span><span class="v">${state.tel}</span></div>
+    <div class="summary-row"><span class="k">車種</span><span class="v">${state.carModel || "未記入"}</span></div>
+    <div class="summary-row"><span class="k">ナンバー</span><span class="v">${state.carNumber || "未記入"}</span></div>
+    ${state.company ? `<div class="summary-row"><span class="k">法人名</span><span class="v">${state.company}</span></div>` : ""}
+    ${state.note ? `<div class="summary-row"><span class="k">ご相談内容</span><span class="v">${state.note}</span></div>` : ""}
+  `;
+}
+
+function renderChangeSummary() {
+  const card = document.getElementById("changeSummaryCard");
+  const r = state.editingReservation;
+  card.innerHTML = `
+    <div class="summary-row"><span class="k">拠点</span><span class="v">${r.locationName}</span></div>
+    <div class="summary-row"><span class="k">変更前</span><span class="v">${formatDate(r.date)} ${r.time}〜</span></div>
+    <div class="summary-row"><span class="k">変更後</span><span class="v">${formatDate(state.date)} ${state.slot}〜</span></div>
+  `;
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  const days = ["日","月","火","水","木","金","土"];
+  return `${d.getMonth() + 1}月${d.getDate()}日（${days[d.getDay()]}）`;
+}
+
+/* ==============================
+   送信（新規予約）
+   ============================== */
+async function submitReservation() {
+  const btn = document.getElementById("btnNext");
+  btn.disabled = true;
+  btn.textContent = "送信中…";
+
+  const payload = {
+    action: "reserve",
+    locationId: state.location.id,
+    date: state.date,
+    time: state.slot,
+    oilChange: state.oilChange === "yes",
+    tireStorage: state.tireStorage,
+    name: state.name,
+    tel: state.tel,
+    carModel: state.carModel,
+    carNumber: state.carNumber,
+    company: state.company,
+    note: state.note,
+    lineUserId: state.lineUserId,
+    lineDisplayName: state.lineDisplayName
+  };
+
+  try {
+    const res = await fetch(CONFIG.GAS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (result.ok) {
+      goToStep("done");
+    } else {
+      document.getElementById("failMessage").textContent =
+        result.message || "選択した時間枠は埋まってしまいました。お手数ですが日時を選び直してください。";
+      goToStep("fail");
+    }
+  } catch (e) {
+    document.getElementById("failMessage").textContent = "通信エラーが発生しました。電波の良い場所でもう一度お試しください。";
+    goToStep("fail");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "予約を確定する";
+  }
+}
+
+/* ==============================
+   送信（日時変更）
+   ============================== */
+async function submitChange() {
+  const btn = document.getElementById("btnNext");
+  btn.disabled = true;
+  btn.textContent = "送信中…";
+
+  const payload = {
+    action: "changeDateTime",
+    reservationId: state.editingReservation.id,
+    date: state.date,
+    time: state.slot,
+    lineUserId: state.lineUserId
+  };
+
+  try {
+    const res = await fetch(CONFIG.GAS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (result.ok) {
+      goToStep("changeDone");
+    } else {
+      document.getElementById("failMessage").textContent =
+        result.message || "選択した時間枠は埋まってしまいました。お手数ですが日時を選び直してください。";
+      goToStep("fail");
+    }
+  } catch (e) {
+    document.getElementById("failMessage").textContent = "通信エラーが発生しました。電波の良い場所でもう一度お試しください。";
+    goToStep("fail");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "変更を確定する";
+  }
+}
+
+/* ==============================
+   画面遷移
+   ============================== */
+function goToStep(step) {
+  document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
+  document.querySelector(`.step[data-step="${step}"]`).classList.add("active");
+  state.step = step;
+
+  const footer = document.getElementById("footerNav");
+  const header = document.getElementById("topHeader");
+
+  const noChromeSteps = ["loading", "done", "changeDone", "fail"];
+  if (noChromeSteps.includes(step)) {
+    footer.style.display = "none";
+    header.style.display = "none";
+    return;
+  }
+
+  header.style.display = "block";
+  footer.style.display = "block";
+
+  if (step === "mypage") {
+    document.getElementById("progressBar").innerHTML = "";
+    document.getElementById("progressLabel").textContent = "";
+    footer.style.display = "none";
+    return;
+  }
+
+  if (step === "changeConfirm") {
+    renderChangeSummary();
+    document.getElementById("progressBar").innerHTML = "";
+    document.getElementById("progressLabel").textContent = "新しい日時の確認";
+    document.getElementById("btnBack").style.visibility = "visible";
+    document.getElementById("btnNext").textContent = "変更を確定する";
+    document.getElementById("btnNext").disabled = false;
+    return;
+  }
+
+  // 通常ステップ（1〜4）
+  renderProgress();
+  document.getElementById("progressLabel").textContent = STEP_LABELS[step] || "";
+  document.getElementById("btnBack").style.visibility = (step === 1 && state.myReservations.length === 0) ? "hidden" : "visible";
+
+  if (state.mode === "change" && step === 2) {
+    // 変更モードでは日時選択の次は confirm へ
+  }
+
+  document.getElementById("btnNext").textContent = step === 4 ? "予約を確定する" : "次へ";
+  updateNextButton();
+
+  if (step === 4) renderSummary();
+}
+
+function renderProgress() {
+  const bar = document.getElementById("progressBar");
+  bar.innerHTML = "";
+  const current = typeof state.step === "number" ? state.step : 4;
+  for (let i = 1; i <= 4; i++) {
+    const seg = document.createElement("div");
+    seg.className = "seg" + (i <= current ? " done" : "");
+    bar.appendChild(seg);
+  }
+}
+
+function updateNextButton() {
+  const btn = document.getElementById("btnNext");
+  let ok = false;
+  switch (state.step) {
+    case 1: ok = !!state.location; break;
+    case 2: ok = !!state.date && !!state.slot; break;
+    case 3: ok = true; break;
+    case 4: ok = true; break;
+    default: ok = false;
+  }
+  btn.disabled = !ok;
+}
+
+/* ==============================
+   イベント登録
+   ============================== */
+function bindOilChangeOptions() {
+  document.querySelectorAll("#oilChangeList .option").forEach(el => {
+    el.addEventListener("click", () => {
+      document.querySelectorAll("#oilChangeList .option").forEach(o => o.classList.remove("selected"));
+      el.classList.add("selected");
+      state.oilChange = el.dataset.value;
+    });
+  });
+}
+
+function bindTireStorageOptions() {
+  document.querySelectorAll("#tireStorageList .option").forEach(el => {
+    el.addEventListener("click", () => {
+      document.querySelectorAll("#tireStorageList .option").forEach(o => o.classList.remove("selected"));
+      el.classList.add("selected");
+      state.tireStorage = el.dataset.value;
+    });
+  });
+}
+
+function bindEvents() {
+  bindOilChangeOptions();
+  bindTireStorageOptions();
+
+  document.getElementById("btnNewFromMypage").addEventListener("click", () => {
+    state.mode = "new";
+    state.editingReservation = null;
+    state.location = null;
+    state.date = null;
+    state.slot = null;
+    document.querySelectorAll("#locationList .option").forEach(o => o.classList.remove("selected"));
+    document.getElementById("step2Title").textContent = "日時を選んでください";
+    document.getElementById("step2Desc").textContent = "ご希望の日付を選ぶと、空いている時間帯が表示されます。";
+    goToStep(1);
+  });
+
+  document.getElementById("btnNext").addEventListener("click", () => {
+    if (state.step === "changeConfirm") {
+      submitChange();
+      return;
+    }
+
+    if (state.step === 2 && state.mode === "change") {
+      goToStep("changeConfirm");
+      return;
+    }
+
+    if (state.step === 3) {
+      if (!validateStep3()) return;
+      state.name = document.getElementById("nameInput").value.trim();
+      state.tel = document.getElementById("telInput").value.trim();
+      state.carModel = document.getElementById("carModelInput").value.trim();
+      state.carNumber = document.getElementById("carNumberInput").value.trim();
+      state.company = document.getElementById("companyInput").value.trim();
+      state.note = document.getElementById("noteInput").value.trim();
+    }
+
+    if (state.step === 4) {
+      submitReservation();
+      return;
+    }
+
+    if (typeof state.step === "number" && state.step < 4) {
+      goToStep(state.step + 1);
+    }
+  });
+
+  document.getElementById("btnBack").addEventListener("click", () => {
+    if (state.step === "changeConfirm") {
+      goToStep(2);
+      return;
+    }
+    if (typeof state.step === "number" && state.step > 1) {
+      goToStep(state.step - 1);
+    } else if (state.step === 1 && state.myReservations.length > 0) {
+      goToStep("mypage");
+    }
+  });
+}
+
+init();
+</script>
+
+</body>
+</html>
