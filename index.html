@@ -218,13 +218,14 @@
     font-weight:500;
   }
   .warning-box{
-    background:var(--accent-bg);
-    border:1px solid var(--accent);
+    background:var(--danger-bg);
+    border:2px solid var(--danger);
     border-radius:10px;
-    padding:12px 14px;
+    padding:14px 16px;
     margin-top:10px;
-    font-size:13px;
-    color:var(--accent-ink);
+    font-size:14px;
+    color:var(--danger);
+    font-weight:500;
     line-height:1.6;
   }
 
@@ -459,7 +460,7 @@
         </div>
         <p class="error-text" id="tireStorageError">いずれかを選択してください</p>
         <p class="warning-box" id="tireStorageFeeNotice" style="display:none;">
-          タイヤ保管中の方で本店での作業をご希望の場合、別途タイヤ運搬料として2,200円を承ります。あらかじめご了承ください。
+          ⚠ タイヤ保管中の方で本店での作業をご希望の場合、別途タイヤ運搬料として2,200円を承ります。あらかじめご了承ください。
         </p>
       </div>
 
@@ -488,7 +489,7 @@
       </div>
       <div class="field">
         <label class="field-label" for="noteInput">その他ご相談があればご記入ください</label>
-        <textarea id="noteInput" placeholder="例）作業中に代車をお借りしたい　など"></textarea>
+        <textarea id="noteInput" placeholder="例）●●の点検も希望"></textarea>
       </div>
     </section>
 
@@ -548,7 +549,7 @@
    ============================== */
 const CONFIG = {
   LIFF_ID: "2008137356-lRnnNxzm",                 // LINE Developersで発行したLIFF ID
-  GAS_ENDPOINT: "https://script.google.com/macros/s/AKfycbwpekdDy0ClR9LjWm-iQwIYlWoa9vS9WTaV9rOkO7krT_KMlylr4FcHBvY_u7nIW1ig/exec", // GAS WebアプリのURL
+  GAS_ENDPOINT: "https://script.google.com/macros/s/AKfycbwGhSXoZFFD4d7lH4wn37L2YyZqlr_Nh0uoPdrWorIJ3wK8dNIhhYxm1NmedXX0gxjt/exec", // GAS WebアプリのURL
   LOCATIONS: [
     { id: "honten", name: "本店",     sub: "札幌市東区東苗穂" },
     { id: "bitoe",  name: "ビトエ店", sub: "石狩郡当別町ビトエ" }
@@ -1154,4 +1155,5 @@ init();
 
 </body>
 </html>
+
 
