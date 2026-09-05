@@ -549,7 +549,7 @@
    ============================== */
 const CONFIG = {
   LIFF_ID: "2008137356-lRnnNxzm",                 // LINE Developersで発行したLIFF ID
-  GAS_ENDPOINT: "https://script.google.com/macros/s/AKfycbwGhSXoZFFD4d7lH4wn37L2YyZqlr_Nh0uoPdrWorIJ3wK8dNIhhYxm1NmedXX0gxjt/exec", // GAS WebアプリのURL
+  GAS_ENDPOINT: ""https://script.google.com/macros/s/AKfycbwGhSXoZFFD4d7lH4wn37L2YyZqlr_Nh0uoPdrWorIJ3wK8dNIhhYxm1NmedXX0gxjt/exec", // GAS WebアプリのURL
   LOCATIONS: [
     { id: "honten", name: "本店",     sub: "札幌市東区東苗穂" },
     { id: "bitoe",  name: "ビトエ店", sub: "石狩郡当別町ビトエ" }
@@ -743,9 +743,7 @@ function selectLocation(loc, el) {
    ============================== */
 document.addEventListener("DOMContentLoaded", () => {
   const dateInput = document.getElementById("dateInput");
-  const today = new Date();
-  const minDate = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-  dateInput.min = minDate.toISOString().split("T")[0];
+  dateInput.min = calculateMinBookableDateStr_();
 
   dateInput.addEventListener("change", async () => {
     state.date = dateInput.value;
@@ -754,6 +752,22 @@ document.addEventListener("DOMContentLoaded", () => {
     await loadSlots();
   });
 });
+
+// 今日から数えて「日曜日を含まない7日後」以降の日付のみ予約可能にする
+function calculateMinBookableDateStr_() {
+  const d = new Date();
+  let count = 0;
+  while (count < 7) {
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() !== 0) { // 0 = 日曜日
+      count++;
+    }
+  }
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 async function loadSlots() {
   const area = document.getElementById("slotArea");
@@ -1155,5 +1169,3 @@ init();
 
 </body>
 </html>
-
-
