@@ -751,7 +751,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const dateError = document.getElementById("dateError");
     const selected = dateInput.value;
     const minStr = calculateMinBookableDateStr_();
-    const weekday = new Date(selected + "T00:00:00").getUTCDay(); // 0=日曜日
+    const [selYear, selMonth, selDay] = selected.split("-").map(Number);
+    const weekday = new Date(selYear, selMonth - 1, selDay).getDay(); // 0=日曜日
 
     if (selected < minStr) {
       state.date = null;
