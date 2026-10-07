@@ -530,6 +530,7 @@
         <div class="icon">!</div>
         <h2 id="failTitle">送信できませんでした</h2>
         <p id="failMessage">時間をおいてもう一度お試しください。</p>
+        <button class="primary" id="btnRetrySlot" style="margin-top:24px;width:100%;max-width:320px;">日時を選び直す</button>
       </div>
     </section>
 
@@ -1150,6 +1151,13 @@ function bindEvents() {
     document.getElementById("dateError").style.display = "none";
     document.getElementById("slotArea").innerHTML = `<p class="slot-empty">日付を選ぶと空き時間が表示されます</p>`;
     goToStep(1);
+  });
+
+  // 予約失敗（枠が埋まった等）から日時選択に戻る
+  document.getElementById("btnRetrySlot").addEventListener("click", () => {
+    state.slot = null;
+    goToStep(2);
+    if (state.date) loadSlots(); // 最新の空き状況を取り直す
   });
 
   document.getElementById("btnNext").addEventListener("click", () => {
